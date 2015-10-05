@@ -38,9 +38,11 @@ class CopyDialog extends Dialog
             activatePane: true
             initialLine: activeEditor?.getLastCursor().getBufferRow()
             initialColumn: activeEditor?.getLastCursor().getBufferColumn()
-      if repo = repoForPath(newPath)
-        repo.getPathStatus(@initialPath)
-        repo.getPathStatus(newPath)
+      # Tell repo about two new files to track
+      repoForPath(newPath).then (repo) =>
+        if repo?
+          repo.getPathStatus(@initialPath)
+          repo.getPathStatus(newPath)
       @close()
     catch error
       @showError("#{error.message}.")

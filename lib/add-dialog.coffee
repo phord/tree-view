@@ -43,7 +43,9 @@ class AddDialog extends Dialog
           @showError("File names must not end with a '#{path.sep}' character.")
         else
           fs.writeFileSync(newPath, '')
-          repoForPath(newPath)?.getPathStatus(newPath)
+          # Tell repo about a new file to track
+          repoForPath(newPath).then (repo) =>
+            repo?.getPathStatus(newPath)
           @trigger 'file-created', [newPath]
           @close()
       else

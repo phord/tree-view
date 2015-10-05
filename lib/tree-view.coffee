@@ -683,9 +683,10 @@ class TreeView extends View
       fs.makeTreeSync(newDirectoryPath) unless fs.existsSync(newDirectoryPath)
       fs.moveSync(initialPath, newPath)
 
-      if repo = repoForPath(newPath)
-        repo.getPathStatus(initialPath)
-        repo.getPathStatus(newPath)
+      repoForPath(newPath).then (repo) =>
+        if repo?
+          repo.getPathStatus(initialPath)
+          repo.getPathStatus(newPath)
 
     catch error
       atom.notifications.addWarning("Failed to move entry #{initialPath} to #{newDirectoryPath}", detail: error.message)

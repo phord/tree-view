@@ -25,15 +25,21 @@ class DirectoryView extends HTMLElement
     @appendChild(@entries)
     @entries.classList.add('entries', 'list-tree')
 
-    if @directory.symlink
-      iconClass = 'icon-file-symlink-directory'
-    else
-      iconClass = 'icon-file-directory'
-      if @directory.isRoot
-        iconClass = 'icon-repo' if repoForPath(@directory.path)?.isProjectAtRoot()
+    iconPromise = new Promise( ( resolve ) =>
+      if @directory.symlink
+        resolve('icon-file-symlink-directory')
       else
-        iconClass = 'icon-file-submodule' if @directory.submodule
-    @directoryName.classList.add(iconClass)
+        repoForPath(@directory.path).then (repo) =>
+          #console.log @directory.path, " in ", repo
+          if repo?.isSubmodule(@directory.path)
+            resolve('icon-file-submodule')
+          else if repo?.relativize(@directory.path) is ""
+            resolve('icon-repo')
+          else
+            resolve('icon-file-directory')
+    )
+    iconPromise.then (iconClass) =>
+      @directoryName.classList.add(iconClass)
     @directoryName.textContent = @directory.name
     @directoryName.dataset.name = @directory.name
     @directoryName.dataset.path = @directory.path

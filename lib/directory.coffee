@@ -29,7 +29,8 @@ class Directory
     @status = null
     @entries = {}
 
-    @submodule = repoForPath(@path)?.isSubmodule(@path)
+    @submodule = false
+    repoForPath(@path).then( (repo) => @submodule = repo?.isSubmodule(@path) )
 
     @subscribeToRepo()
     @updateStatus()
@@ -63,38 +64,36 @@ class Directory
 
   # Subscribe to project's repo for changes to the Git status of this directory.
   subscribeToRepo: ->
-    repo = repoForPath(@path)
-    return unless repo?
-
-    @subscriptions.add repo.onDidChangeStatus (event) =>
-      @updateStatus(repo) if @contains(event.path)
-    @subscriptions.add repo.onDidChangeStatuses =>
-      @updateStatus(repo)
+    repoForPath(@path).then (repo) =>
+      @subscriptions.add repo?.onDidChangeStatus (event) =>
+        @updateStatus(repo) if @contains(event.path)
+      @subscriptions.add repo?.onDidChangeStatuses =>
+        @updateStatus(repo)
 
   # Update the status property of this directory using the repo.
   updateStatus: ->
-    repo = repoForPath(@path)
-    return unless repo?
+    repoForPath(@path).then (repo) =>
+      if repo
+        newStatus = null
+        if repo.isPathIgnored(@path)
+          newStatus = 'ignored'
+        else
+          status = repo.getDirectoryStatus(@path)
+          if repo.isStatusModified(status)
+            newStatus = 'modified'
+          else if repo.isStatusNew(status)
+            newStatus = 'added'
 
-    newStatus = null
-    if repo.isPathIgnored(@path)
-      newStatus = 'ignored'
-    else
-      status = repo.getDirectoryStatus(@path)
-      if repo.isStatusModified(status)
-        newStatus = 'modified'
-      else if repo.isStatusNew(status)
-        newStatus = 'added'
-
-    if newStatus isnt @status
-      @status = newStatus
-      @emitter.emit('did-status-change', newStatus)
+      if newStatus isnt @status
+        @status = newStatus
+        @emitter.emit('did-status-change', newStatus)
 
   # Is the given path ignored?
   isPathIgnored: (filePath) ->
-    if atom.config.get('tree-view.hideVcsIgnoredFiles')
-      repo = repoForPath(@path)
-      return true if repo? and repo.isProjectAtRoot() and repo.isPathIgnored(filePath)
+    #TODO: Make this sync function work with async repo
+    # if atom.config.get('tree-view.hideVcsIgnoredFiles')
+    #   repoForPath(@path).then (repo) =>
+    #     return true if repo? and repo.isProjectAtRoot() and repo.isPathIgnored(filePath)
 
     if atom.config.get('tree-view.hideIgnoredNames')
       for ignoredPattern in @ignoredPatterns

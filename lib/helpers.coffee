@@ -1,11 +1,9 @@
 path = require "path"
 
 module.exports =
-  repoForPath: (goalPath) ->
-    for projectPath, i in atom.project.getPaths()
-      if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
-        return atom.project.getRepositories()[i]
-    null
+  repoForPath: (goalPath) -> atom.project.repositoryForPath(goalPath)
+  # delay = (time) -> new Promise((fulfill) => setTimeout(fulfill, time))
+  # return delay(5000).then(console.log goalPath; )
 
   getStyleObject: (el) ->
     styleProperties = window.getComputedStyle(el)
